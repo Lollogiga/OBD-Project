@@ -3,7 +3,10 @@ from dbm import error
 
 import numpy as np
 import pandas as pd
+
+
 from DatasetPreprocessing import *
+from NeuralNetwork import *
 
 
 def print_menu(message, choice_number):
@@ -69,11 +72,20 @@ def main():
     #TODO pulire precedenti test nelle cartelle di output
     #Strategia Cross-Validation:
     #Fissiamo una griglia di valori lambda:
-    # Creiamo una lista di valori lambda da testare
+    # Creiamo una lista di valori lambda da testare: #TODO Provare con altri valori
     lambdaL1_values = np.logspace(-6, 6, 13)  # da 10^-6 a 10^6
     lambdaL2_values = np.logspace(-6, 6, 13)  # da 10^-6 a 10^6
 
+    """
+    Definiamo la dimensione dei vari layer:
+        Layer di input: ∈ R^n dove n è il numero di features
+        Livelli nascosti ciascuno con un certo numero di neuroni
+    """
+
+    nn_layers = [X_train.shape[1], 32, 32]
     #Dobbiamo inizializzare i parametri:
+    param = param_init(activation_function, nn_layers)
+
 
 if __name__ == "__main__":
     main()
