@@ -81,11 +81,11 @@ def main():
         Layer di input: ∈ R^n dove n è il numero di features
         Livelli nascosti ciascuno con un certo numero di neuroni
     """
-
-    nn_layers = [X_train.shape[1], 32, 32]
+    print(X_train.shape)
+    nn_layers = [X_train.shape[0], 32, 32, 1]
     #Dobbiamo inizializzare i parametri:
     param = param_init(activation_function, nn_layers)
-
+    A, A_prev = L_layer_forward(X_train, param, activation_function)
 
 if __name__ == "__main__":
     main()
