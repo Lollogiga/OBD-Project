@@ -1,13 +1,7 @@
-import os
-from dbm import error
-
-import numpy as np
-import pandas as pd
-
-
 from DatasetPreprocessing import *
-from NeuralNetwork import *
 
+from ParamInitialization import *
+from Training import *
 
 def print_menu(message, choice_number):
     """
@@ -80,11 +74,20 @@ def main():
     Definiamo la dimensione dei vari layer:
         Layer di input: ∈ R^n dove n è il numero di features
         Livelli nascosti ciascuno con un certo numero di neuroni
+        Layer di output: abbiamo un'unica uscita 0/1
     """
-    print(X_train.shape)
+
     nn_layers = [X_train.shape[1], 32, 32, 1]
-    #Dobbiamo inizializzare i parametri:
-    param = param_init(activation_function, nn_layers)
-    train_model(X_train, y_train, param, lambdaL2_values[0], 10, 0.01, "L2")
+    #Dobbiamo inizializzare i parametri
+
+    parameters = param_init(activation_function, nn_layers)
+    # Chiamata alla funzione di training
+    print("X_train shape: ", X_train.shape)
+    trained_parameters, costs = train_model(
+        X_train, y_train, parameters, lambdaL2_values[0], num_epochs=50, learning_rate=0.001,
+        regularization="L2", batch_size=32, use_momentum=True
+    )
+
+
 if __name__ == "__main__":
     main()
