@@ -129,3 +129,56 @@ def train_model(X, Y, parameters, lambd, num_epochs, learning_rate, regularizati
             print(f"Cost after epoch {epoch}: {epoch_cost}")
 
     return parameters, costs
+
+
+def evaluate_model1(X, Y, parameters, lambd, regularization="L2"):
+    """
+    Valuta il modello su un set di dati (training, validation o test).
+
+    Args:
+        X: Matrice di input (m, features).
+        Y: Matrice di etichette (1, m).
+        parameters: Parametri del modello.
+        lambd: Parametro di regolarizzazione.
+        regularization: Tipo di regolarizzazione ('L2' o 'L1').
+
+    Returns:
+        cost: Costo calcolato sul set.
+        accuracy: Accuratezza del modello sul set.
+    """
+    AL, _ = L_layer_forward(X, parameters, "relu")  # Forward pass
+    cost = compute_cost(AL, Y, parameters, lambd, regularization)
+
+    # Calcolare l'accuratezza
+    accuracy = compute_accuracy(AL, Y)
+
+    return cost, accuracy
+
+
+def evaluate_model(X, Y, parameters, lambd, regularization="L2"):
+    AL, _ = L_layer_forward(X, parameters, "sigmoid")  # Usa "sigmoid" per output binario
+    cost = compute_cost(AL, Y, parameters, lambd, regularization)
+
+    # Calcolare l'accuratezza
+    accuracy = compute_accuracy(AL, Y)
+
+    # Stampa delle predizioni e delle etichette reali
+    print("Predizioni:", AL)
+    print("Etichette reali:", Y)
+
+    return cost, accuracy
+
+def compute_accuracy(AL, Y):
+    """
+    Calcola l'accuratezza del modello confrontando le predizioni con le etichette reali.
+    AL: output della rete neurale (probabilità per ogni classe).
+    Y: etichette reali.
+    """
+    predictions = (AL >= 0.5).astype(int)  # Classe positiva se prob >= 0.5
+    true_labels = Y.astype(int)  # Assicurati che Y sia in forma binaria
+
+    # Confronta le predizioni con le etichette reali
+    correct_predictions = np.sum(predictions == true_labels)
+    accuracy = correct_predictions / Y.shape[1]  # accuratezza come frazione di correttezza
+    return accuracy
+
