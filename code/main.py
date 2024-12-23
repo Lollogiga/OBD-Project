@@ -82,10 +82,9 @@ def main():
         Livelli nascosti ciascuno con un certo numero di neuroni
     """
     print(X_train.shape)
-    nn_layers = [X_train.shape[0], 32, 32, 1]
+    nn_layers = [X_train.shape[1], 32, 32, 1]
     #Dobbiamo inizializzare i parametri:
     param = param_init(activation_function, nn_layers)
-    A, A_prev = L_layer_forward(X_train, param, activation_function)
-
+    train_model(X_train, y_train, param, lambdaL2_values[0], 10, 0.01, "L2")
 if __name__ == "__main__":
     main()

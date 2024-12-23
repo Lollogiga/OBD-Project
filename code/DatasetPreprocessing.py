@@ -4,7 +4,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 
-def preprocess_data(df, label_column, test_size=0.2, validation_size=0.1):
+
+def preprocess_data(df, label_column, test_size = 0.2, validation_size = 0.1):
     """
     Preprocessa i dati:
     1) Separiamo features e labels.
@@ -16,12 +17,12 @@ def preprocess_data(df, label_column, test_size=0.2, validation_size=0.1):
     Parameters:
         df (pandas.DataFrame): Il DataFrame contenente i dati.
         label_column (str): Il nome della colonna della label (target).
-        test_size (float): La percentuale di dati da usare per il test set (default 0.2).
-        validation_size (float): La percentuale di dati da usare per il validation set (default 0.1).
+        training
 
     Returns:
-        X_train, X_valid, X_test: Matrici delle feature preprocessate, trasposte.
-        y_train, y_valid, y_test: Vettori delle label preprocessati e riorganizzati.
+        X_train, X_test, y_train, y_test: I dati preprocessati, separati in training e test set.
+        test_size (float): La percentuale di dati da usare per il test set (default 0.2).
+        validation_size (float): La percentuale di dati da usare per il validation set (default 0.1).
     """
     # 1) Dividi la label (y) dalle feature (X)
     X = df.drop(columns=[label_column])
@@ -53,5 +54,9 @@ def preprocess_data(df, label_column, test_size=0.2, validation_size=0.1):
     validation_ratio = validation_size / (1 - test_size)  # Calcola la percentuale di validazione sul training
     X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=validation_ratio, random_state=42)
 
-    # Riorganizza le matrici per adattarsi alla forma richiesta
-    return X_train.T, X_valid.T, X_test.T, y_train.values.reshape(1, -1), y_valid.values.reshape(1, -1), y_test.values.reshape(1, -1)
+    y_train = y_train.values.reshape(1,-1)
+    y_valid = y_valid.values.reshape(1,-1)
+    y_test = y_test.values.reshape(1,-1)
+
+    return X_train, X_valid, X_test, y_train, y_valid, y_test
+
