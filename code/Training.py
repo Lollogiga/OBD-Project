@@ -79,7 +79,7 @@ def update_parameters(parameters, grads, learning_rate, beta=0.9, velocity=None,
     return parameters, velocity
 
 
-def train_model(X, Y, parameters, lambd, num_epochs, learning_rate, regularization="L2", batch_size=32, use_momentum=False):
+def train_model(X, Y, parameters, activation_function, lambd, num_epochs, learning_rate, regularization="L2", batch_size=32, use_momentum=False):
     """
     Addestra la rete neurale con mini-batch gradient descent o gradient descent con momentum.
 
@@ -108,19 +108,19 @@ def train_model(X, Y, parameters, lambd, num_epochs, learning_rate, regularizati
         for X_batch, Y_batch in mini_batches:
 
             # Forward pass
-            AL, caches = L_layer_forward(X_batch, parameters, "relu")
+            AL, caches = L_layer_forward(X_batch, parameters, activation_function)
 
             # Calcola il costo
             cost = compute_cost(AL, Y_batch, parameters, lambd, regularization)
 
             # Backward pass
-            grads = L_layer_backward(AL, Y_batch, caches, parameters, lambd, regularization)
+            grads = L_layer_backward(AL, Y_batch, caches, parameters, activation_function, lambd, regularization)
 
             # Aggiorna i parametri (con o senza momentum)
             parameters, velocity = update_parameters(parameters, grads, learning_rate, use_momentum=use_momentum, velocity=velocity)
 
         # Calcola il costo sull'intero dataset (per monitoraggio)
-        AL_epoch, _ = L_layer_forward(X, parameters, "relu")
+        AL_epoch, _ = L_layer_forward(X, parameters, activation_function)
         epoch_cost = compute_cost(AL_epoch, Y, parameters, lambd, regularization)
         costs.append(epoch_cost)
 
@@ -155,30 +155,53 @@ def evaluate_model1(X, Y, parameters, lambd, regularization="L2"):
     return cost, accuracy
 
 
-def evaluate_model(X, Y, parameters, lambd, regularization="L2"):
-    AL, _ = L_layer_forward(X, parameters, "sigmoid")  # Usa "sigmoid" per output binario
+def evaluate_model(X, Y, parameters, lambd, activation_function, regularization="L2"):
+    """
+    Valuta il modello calcolando il costo e l'accuratezza.
+
+    Parameters:
+        X (np.array): Input della rete neurale.
+        Y (np.array): Etichette reali.
+        parameters (dict): Parametri della rete.
+        lambd (float): Fattore di regolarizzazione.
+        activation_function (str): Funzione di attivazione (es., 'sigmoid').
+        regularization (str): Tipo di regolarizzazione (default "L2").
+
+    Returns:
+        tuple: costo e accuratezza.
+    """
+    # Passaggio forward
+    AL, _ = L_layer_forward(X, parameters, activation_function)  # Usa "sigmoid" per output binario
+
+    # Calcola il costo
     cost = compute_cost(AL, Y, parameters, lambd, regularization)
 
-    # Calcolare l'accuratezza
+    # Calcola l'accuratezza
     accuracy = compute_accuracy(AL, Y)
 
-    # Stampa delle predizioni e delle etichette reali
-    print("Predizioni:", AL)
-    print("Etichette reali:", Y)
+    # Stampa solo la percentuale di accuratezza
+    print(f"Accuratezza: {accuracy * 100:.2f}%")
 
     return cost, accuracy
+
 
 def compute_accuracy(AL, Y):
     """
     Calcola l'accuratezza del modello confrontando le predizioni con le etichette reali.
-    AL: output della rete neurale (probabilità per ogni classe).
-    Y: etichette reali.
+
+    Parameters:
+        AL: Output della rete neurale (probabilità per ogni classe).
+        Y: Etichette reali.
+
+    Returns:
+        float: Accuratezza del modello.
     """
     predictions = (AL >= 0.5).astype(int)  # Classe positiva se prob >= 0.5
     true_labels = Y.astype(int)  # Assicurati che Y sia in forma binaria
 
     # Confronta le predizioni con le etichette reali
     correct_predictions = np.sum(predictions == true_labels)
-    accuracy = correct_predictions / Y.shape[1]  # accuratezza come frazione di correttezza
+    accuracy = correct_predictions / Y.shape[1]  # Accuratezza come frazione di correttezza
     return accuracy
+
 

@@ -108,7 +108,7 @@ def linear_backward(dA, cache, activation_function, lambd=0, regularization=None
 
     return dA_prev, dW, db
 
-def L_layer_backward(AL, Y, caches, parameters, lambd=0, regularization=None):
+def L_layer_backward(AL, Y, caches, parameters, activation_function, lambd=0, regularization=None):
     """
     Esegue la retropropagazione per calcolare i gradienti dei pesi e dei bias.
 
@@ -145,7 +145,7 @@ def L_layer_backward(AL, Y, caches, parameters, lambd=0, regularization=None):
     for l in reversed(range(1, L)):
         current_cache = (caches[f"A{l - 1}"], parameters[f"W{l}"], caches[f"Z{l}"])
 
-        dA_prev, dW, db = linear_backward(dA_prev, current_cache, "sigmoid", lambd=lambd, regularization=regularization)
+        dA_prev, dW, db = linear_backward(dA_prev, current_cache, activation_function, lambd=lambd, regularization=regularization)
 
         # Salva i gradienti per il layer corrente
         derivatives[f"dW{l}"] = dW

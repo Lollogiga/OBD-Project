@@ -1,7 +1,6 @@
 from DatasetPreprocessing import *
 
-from ParamInitialization import *
-from Training import *
+from CrossValidation import *
 
 
 def print_menu(message, choice_number):
@@ -44,6 +43,13 @@ def main():
         print("Error during define activation relu")
         return -1
 
+    regularization_type = print_menu(
+        "What regularization type do you want to use?\n"+
+        "[1] L1\n"+
+        "[2] L2\n",
+        ["1", "2"]
+    )
+
     #Select dataset and preprocessing:
     if dataset == "1":
         dataset = pd.read_csv("../dataset/diabetes_dataset.csv")
@@ -66,10 +72,17 @@ def main():
 
     #TODO pulire precedenti test nelle cartelle di output
     #Strategia Cross-Validation:
+
     #Fissiamo una griglia di valori lambda:
     # Creiamo una lista di valori lambda da testare: #TODO Provare con altri valori
-    lambdaL1_values = np.logspace(-6, 6, 13)  # da 10^-6 a 10^6
-    lambdaL2_values = np.logspace(-6, 6, 13)  # da 10^-6 a 10^6
+    lambdaL1_values = [1e-3, 5e-3, 0.5, 1]
+    lambdaL2_values = [0.01, 0.1, 0.5, 4.5]
+
+
+    if regularization_type=="L1":
+        lambdaValues = lambdaL1_values
+    else:
+        lambdaValues = lambdaL2_values
 
     """
     Definiamo la dimensione dei vari layer:
@@ -78,33 +91,34 @@ def main():
         Layer di output: abbiamo un'unica uscita 0/1
     """
 
-    nn_layers = [X_train.shape[1] ,64, 32, 32, 1]
+    nn_layers = [X_train.shape[1], 120, 32, 32, 1]
     #Dobbiamo inizializzare i parametri
 
-    parameters = param_init(activation_function, nn_layers)
-    # Chiamata alla funzione di training
-    print("X_train shape: ", X_train.shape)
-    trained_parameters, costs = train_model(
-        X_train, y_train, parameters, lambdaL2_values[0], num_epochs=70, learning_rate=0.001,
-        regularization="L2", batch_size=32, use_momentum=True
+    b_lambda, b_accuracy, trained_parameters = cross_validate(
+        X_train, y_train,
+        X_valid, y_valid,
+        activation_function,
+        lambdaValues,
+        nn_layers,
+        num_epochs=70,
+        learning_rate=0.1,
+        batch_size=64,
     )
+    print(f"Best Lambda: {b_lambda}, Best Validation Accuracy: {b_accuracy * 100}%")
 
-    train_cost, train_accuracy = evaluate_model(X_train, y_train, trained_parameters, lambdaL2_values[0], regularization="L2")
+    train_cost, train_accuracy = evaluate_model(X_train, y_train, trained_parameters, lambdaL2_values[1], activation_function, regularization="L2")
     print(f"Training cost: {train_cost}, Training accuracy: {train_accuracy * 100}%")
 
     # Valutazione sul validation set
-    val_cost, val_accuracy = evaluate_model(X_valid, y_valid, trained_parameters, lambdaL2_values[0], regularization="L2")
+    val_cost, val_accuracy = evaluate_model(X_valid, y_valid, trained_parameters, lambdaL2_values[1], activation_function , regularization="L2",)
     print(f"Validation cost: {val_cost}, Validation accuracy: {val_accuracy * 100}%")
 
     # Valutazione sul test set
-    test_cost, test_accuracy = evaluate_model(X_test, y_test, trained_parameters, lambdaL2_values[0], regularization="L2")
+    test_cost, test_accuracy = evaluate_model(X_test, y_test, trained_parameters, lambdaL2_values[1], activation_function,regularization="L2")
     print(f"Test cost: {test_cost}, Test accuracy: {test_accuracy * 100}%")
 
     #Proviamo a passare un'instanza di input:
-    print(X_test.shape)
-    print(y_test)
-    #index = np.random.randint(0, X_test.shape[0])
-    index = 1
+    index = np.random.randint(0, X_test.shape[0])
     X_sample = X_test[index, :].reshape(1, -1)  # Aggiungi la dimensione del batch
     y_sample = y_test[:, index]
 
