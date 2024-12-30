@@ -1,0 +1,6 @@
+#Constant for model:
+NUM_EPOCHS = 100
+BATCH_SIZE = 64
+LEARNING_RATE = 0.01
+MOMENTUM_BOOL = True
+MOMENTUM = 0.9

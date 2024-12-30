@@ -1,207 +1,150 @@
 import numpy as np
-from Backpropagation import *
+from Backpropragation import *
+from ParamInitiliazizaion import *
+from constant import *
+from CrossValidation import *
 
-def create_mini_batches(X, Y, batch_size):
+def evaluate_model(X, parameters, y, activation_fn):
+
+    probs, _ = L_layer_forward(X, parameters, activation_fn, "sigmoid")
+    labels = (probs >= 0.5) * 1
+
+    # accuracy
+    accuracy = np.mean(labels == y) * 100
+
+    # True Positives
+    TP = np.sum((y == 1) & (labels == 1))
+    # False Positives
+    FP = np.sum((y == 0) & (labels == 1))
+    # False Negatives
+    FN = np.sum((y == 1) & (labels == 0))
+
+    # precision
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+
+    # recall
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+
+    # f1 score
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    return accuracy, precision*100, recall*100, f1
+
+def create_mini_batches(X, y, batch_size):
     """
-    Crea mini-batch da un set di dati.
+    Splits the dataset into mini-batches of a given size.
 
-    Args:
-        X: Matrice di input.
-        Y: Matrice di etichette
-        batch_size: Dimensione dei mini-batch.
+    Parameters:
+    X (numpy.ndarray): The input features of shape (num_samples, num_features).
+    y (numpy.ndarray): The labels of shape (1, numSample).
+    batch_size (int): The size of each mini-batch.
 
     Returns:
-        mini_batches: Lista di tuple (X_batch, Y_batch).
+    list: A list of tuples, where each tuple contains a mini-batch (X_mini, y_mini).
     """
-    m = X.shape[0]  # Numero totale di campioni
+    # List to store mini-batches
     mini_batches = []
+    y = y.T
 
-    # Mix data
-    permutation = np.random.permutation(m)
-    X_shuffled = X[permutation, :]  # (m, features)
-    Y_shuffled = Y[:, permutation]  # (1, m)
+    # Combine features (X) and labels (y) into a single array for shuffling
+    data = np.hstack((X, y))
 
-    # Create mini-batch
-    num_batches = m // batch_size
-    for i in range(num_batches):
-        start = i * batch_size
-        end = start + batch_size
-        X_batch = X_shuffled[start:end, :]  # (batch_size, features)
-        Y_batch = Y_shuffled[:, start:end]  # (1, batch_size)
-        mini_batches.append((X_batch, Y_batch))
+    # Shuffle the combined data to ensure randomness in mini-batches
+    np.random.shuffle(data)
 
-    # Manage the last batch (if m % batch != 0)
-    if m % batch_size != 0:
-        X_batch = X_shuffled[num_batches * batch_size:, :]
-        Y_batch = Y_shuffled[:, num_batches * batch_size:]
-        mini_batches.append((X_batch, Y_batch))
+    # Calculate the number of complete mini-batches
+    n_minibatches = data.shape[0] // batch_size
 
+    # Loop through the data to create complete mini-batches
+    for i in range(n_minibatches):
+        # Extract a slice of data for the current mini-batch
+        mini_batch = data[i * batch_size:(i + 1) * batch_size, :]
+
+        # Separate features (X) from labels (y)
+        X_mini = mini_batch[:, :-1]  # All columns except the last one
+        Y_mini = mini_batch[:, -1].reshape((-1, 1))  # The last column as a column vector
+
+        # Append the mini-batch as a tuple to the list
+        mini_batches.append((X_mini, Y_mini))
+
+    # Handle any remaining data that doesn't fit into a complete mini-batch
+    if data.shape[0] % batch_size != 0:
+        # Extract the remaining data
+        mini_batch = data[n_minibatches * batch_size:data.shape[0], :]
+
+        # Separate features (X) from labels (y)
+        X_mini = mini_batch[:, :-1]  # All columns except the last one
+        Y_mini = mini_batch[:, -1].reshape((-1, 1))  # The last column as a column vector
+
+        # Append the last mini-batch to the list
+        mini_batches.append((X_mini, Y_mini))
+
+    # Return the list of mini-batches
     return mini_batches
 
+def update_parameters(parameters, prev_parameters, grads, learning_rate, momentumBool, momentum):
 
-def update_parameters(parameters, grads, learning_rate, beta=0.9, velocity=None, use_momentum=False):
-    """
-    Funzione per aggiornare i parametri con o senza momentum.
+    L = len(parameters)//2
+    prev_parameters = parameters
 
-    Args:
-        parameters: Dizionario con i parametri della rete (pesi e bias).
-        grads: Dizionario con i gradienti calcolati.
-        learning_rate: Tasso di apprendimento.
-        beta: Coefficiente di momentum (default=0.9).
-        velocity: Dizionario con la velocità precedente (se si usa il momentum).
-        use_momentum: Booleano che indica se usare il momentum o meno.
-
-    Returns:
-        parameters: Parametri aggiornati.
-        velocity: Nuovo dizionario di velocità (usato solo se si usa il momentum).
-    """
-    if velocity is None:
-        velocity = {f"W{l+1}": np.zeros_like(parameters[f"W{l+1}"]) for l in range(len(parameters) // 2)}
-        velocity.update({f"b{l+1}": np.zeros_like(parameters[f"b{l+1}"]) for l in range(len(parameters) // 2)})
-
-    for l in range(len(parameters) // 2):
-        W_key = f"W{l+1}"
-        b_key = f"b{l+1}"
-
-        if use_momentum:
-            # Aggiornamento con momentum
-            velocity[W_key] = beta * velocity[W_key] + (1 - beta) * grads[f"dW{l+1}"]
-            velocity[b_key] = beta * velocity[b_key] + (1 - beta) * grads[f"db{l+1}"]
-
-            # Aggiornamento dei parametri
-            parameters[W_key] -= learning_rate * velocity[W_key]
-            parameters[b_key] -= learning_rate * velocity[b_key]
+    for l in range(1, L+1):
+        if not momentumBool:
+            parameters[f"W{l}"] = parameters[f"W{l}"] - learning_rate * grads[f"dW{l}"]
+            parameters[f"b{l}"] = parameters[f"b{l}"] - learning_rate * grads[f"db{l}"]
         else:
-            # Aggiornamento senza momentum (gradient descent classico)
-            parameters[W_key] -= learning_rate * grads[f"dW{l+1}"]
-            parameters[b_key] -= learning_rate * grads[f"db{l+1}"]
+            parameters[f"W{l}"] = parameters[f"W{l}"] - learning_rate * grads[f"dW{l}"] + momentum * (parameters[f"W{l}"] - prev_parameters[f"W{l}"])
+            parameters[f"b{l}"] = parameters[f"b{l}"] - learning_rate * grads[f"db{l}"] + momentum * (parameters[f"b{l}"] - prev_parameters[f"b{l}"])
 
-    return parameters, velocity
+    return parameters, prev_parameters
 
 
-def train_model(X, Y, parameters, activation_function, lambd, num_epochs, learning_rate, regularization="L2", batch_size=32, use_momentum=False):
+def train_model(X_train, y_train, nn_layers, activation_function, lambd, regularitazion_type):
     """
-    Addestra la rete neurale con mini-batch gradient descent o gradient descent con momentum.
+        Addestra la rete neurale con mini-batch gradient descent o gradient descent con momentum.
 
-    Args:
-        X: Matrice di input (m, features).
-        Y: Matrice di etichette (1, m).
-        parameters: Dizionario con i parametri inizializzati (pesi e bias).
-        lambd: Parametro di regolarizzazione.
-        num_epochs: Numero di epoche.
-        learning_rate: Tasso di apprendimento.
-        regularization: Tipo di regolarizzazione ('L2' o 'L1').
-        batch_size: Dimensione del mini-batch.
-        use_momentum: Booleano che indica se usare il gradient descent o gradient descent with momentum.
+        Args:
+            X_train: Matrice di input (m, features).
+            y_train: Matrice di etichette (1, m).
+            nn_layers: Dimensione neural networks
+            activation_function: type of activation function
+            lambd: Parametro di regolarizzazione.
+            num_epochs: Numero di epoche.
+            Regularitazion_type: Tipo di regolarizzazione ('L2' o 'L1').
+            learning_rate: Tasso di apprendimento.
+            batch_size: Dimensione del mini-batch.
+            momentum: Booleano che indica se usare il gradient descent o gradient descent with momentum.
 
-    Returns:
-        parameters: Parametri aggiornati.
-        costs: Lista dei costi calcolati ad ogni epoca.
-    """
-    costs = []  # Per salvare il costo ad ogni epoca
-    velocity = None  # Variabile per la velocità (momentum)
+        Returns:
+            parameters: Parametri aggiornati.
+            costs: Lista dei costi calcolati a ogni epoca.
+        """
 
-    for epoch in range(num_epochs):
-        # Crea i mini-batch
-        mini_batches = create_mini_batches(X, Y, batch_size)
+    cost = [] #Cost for each epoch
+    learning_rate = LEARNING_RATE
 
+    # Inizializza i parametri:
+    parameters, prev_parameters = param_init(activation_function, nn_layers)
+
+    for epoch in range(NUM_EPOCHS):
+        #Create mini-batch:
+        mini_batches = create_mini_batches(X_train, y_train, BATCH_SIZE)
+        #Iteration on miniBatch:
         for X_batch, Y_batch in mini_batches:
+            #TODO: Try to use Diminishing step-size
 
-            # Forward pass
-            AL, caches = L_layer_forward(X_batch, parameters, activation_function)
+            #Forward pass:
+            Al, caches = L_layer_forward(X_batch, parameters, activation_function)
 
-            # Calcola il costo
-            cost = compute_cost(AL, Y_batch, parameters, lambd, regularization)
+            #Compute cost:
+            cost = compute_cost(Al, Y_batch, parameters, lambd, regularitazion_type)
 
-            # Backward pass
-            grads = L_layer_backward(AL, Y_batch, caches, parameters, activation_function, lambd, regularization)
+            #Backward propagation:
+            grads = L_layer_backward(Al, Y_batch, caches, parameters, activation_function, lambd, regularitazion_type)
 
-            # Aggiorna i parametri (con o senza momentum)
-            parameters, velocity = update_parameters(parameters, grads, learning_rate, use_momentum=use_momentum, velocity=velocity)
-
-        # Calcola il costo sull'intero dataset (per monitoraggio)
-        AL_epoch, _ = L_layer_forward(X, parameters, activation_function)
-        epoch_cost = compute_cost(AL_epoch, Y, parameters, lambd, regularization)
-        costs.append(epoch_cost)
-
-        # Stampa il costo ogni 10 epoche
-        if epoch % 10 == 0 or epoch == num_epochs - 1:
-            print(f"Cost after epoch {epoch}: {epoch_cost}")
-
-    return parameters, costs
+            #Update param:
+            parameters, prev_parameters = update_parameters(parameters, prev_parameters, grads, learning_rate, MOMENTUM_BOOL, MOMENTUM)
 
 
-def evaluate_model1(X, Y, parameters, lambd, regularization="L2"):
-    """
-    Valuta il modello su un set di dati (training, validation o test).
-
-    Args:
-        X: Matrice di input (m, features).
-        Y: Matrice di etichette (1, m).
-        parameters: Parametri del modello.
-        lambd: Parametro di regolarizzazione.
-        regularization: Tipo di regolarizzazione ('L2' o 'L1').
-
-    Returns:
-        cost: Costo calcolato sul set.
-        accuracy: Accuratezza del modello sul set.
-    """
-    AL, _ = L_layer_forward(X, parameters, "relu")  # Forward pass
-    cost = compute_cost(AL, Y, parameters, lambd, regularization)
-
-    # Calcolare l'accuratezza
-    accuracy = compute_accuracy(AL, Y)
-
-    return cost, accuracy
-
-
-def evaluate_model(X, Y, parameters, lambd, activation_function, regularization="L2"):
-    """
-    Valuta il modello calcolando il costo e l'accuratezza.
-
-    Parameters:
-        X (np.array): Input della rete neurale.
-        Y (np.array): Etichette reali.
-        parameters (dict): Parametri della rete.
-        lambd (float): Fattore di regolarizzazione.
-        activation_function (str): Funzione di attivazione (es., 'sigmoid').
-        regularization (str): Tipo di regolarizzazione (default "L2").
-
-    Returns:
-        tuple: costo e accuratezza.
-    """
-    # Passaggio forward
-    AL, _ = L_layer_forward(X, parameters, activation_function)  # Usa "sigmoid" per output binario
-
-    # Calcola il costo
-    cost = compute_cost(AL, Y, parameters, lambd, regularization)
-
-    # Calcola l'accuratezza
-    accuracy = compute_accuracy(AL, Y)
-
-    # Stampa solo la percentuale di accuratezza
-    print(f"Accuratezza: {accuracy * 100:.2f}%")
-
-    return cost, accuracy
-
-
-def compute_accuracy(AL, Y):
-    """
-    Calcola l'accuratezza del modello confrontando le predizioni con le etichette reali.
-
-    Parameters:
-        AL: Output della rete neurale (probabilità per ogni classe).
-        Y: Etichette reali.
-
-    Returns:
-        float: Accuratezza del modello.
-    """
-    predictions = (AL >= 0.5).astype(int)  # Classe positiva se prob >= 0.5
-    true_labels = Y.astype(int)  # Assicurati che Y sia in forma binaria
-
-    # Confronta le predizioni con le etichette reali
-    correct_predictions = np.sum(predictions == true_labels)
-    accuracy = correct_predictions / Y.shape[1]  # Accuratezza come frazione di correttezza
-    return accuracy
+    return parameters, cost
 
 

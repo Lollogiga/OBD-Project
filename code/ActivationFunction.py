@@ -22,7 +22,7 @@ def relu(Z):
 
 def tanh_derivative(dA, Z):
 
-    A, Z = tanh(Z)
+    A  = tanh(Z)
     dZ = dA * (1 - np.square(A))
 
     return dZ
@@ -30,13 +30,13 @@ def tanh_derivative(dA, Z):
 
 def relu_derivative(dA, Z):
 
-    A, Z = relu(Z)
+    A = relu(Z)
     dZ = np.multiply(dA, np.int64(A > 0))
 
     return dZ
 
 def sigmoid_derivative(dA, Z):
-    A, Z = sigmoid(Z)
+    A = sigmoid(Z)
     dZ = dA * A * (1 - A)
 
     return dZ

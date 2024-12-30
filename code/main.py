@@ -1,7 +1,8 @@
+import pandas as pd
+
 from DatasetPreprocessing import *
-
 from CrossValidation import *
-
+from constant import *
 
 def print_menu(message, choice_number):
     """
@@ -19,16 +20,17 @@ def print_menu(message, choice_number):
         else:
             print("Choice is not valid. Please select a valid input\n")
 
-
 def main():
+    #Choice Dataset
     dataset = print_menu(
         "Choice a dateset:\n" +
-        "[1] Diabete_dataset\n"+
-        "[2] Decidere scelta2\n"+
-        "[3] Decidere scelta2\n",
-        ["1","2","3"]
+        "[1] Wine Quality\n" +
+        "[2] Mushroom dataset\n" +
+        "[3] Heart attack risk dataset\n",
+    ["1", "2", "3"]
     )
 
+    #Choice Activation function:
     activation_function = print_menu(
         "What activation function do you want to use?\n"+
         "[1] relu\n"+
@@ -40,98 +42,75 @@ def main():
     elif activation_function == "2":
         activation_function = "tanh"
     else:
-        print("Error during define activation relu")
+        print("Invalid activation function")
         return -1
 
+    #Choice regularization:
     regularization_type = print_menu(
-        "What regularization type do you want to use?\n"+
-        "[1] L1\n"+
+        "What regularitazion do you want to use?\n"+
+        "[1] L1\n" +
         "[2] L2\n",
         ["1", "2"]
     )
-
-    #Select dataset and preprocessing:
-    if dataset == "1":
-        dataset = pd.read_csv("../dataset/diabetes_dataset.csv")
-        print('Dataset shape: %s' % (str(dataset.shape)))
-        print("First 5 row:\n", dataset.head())
-        X_train, X_valid, X_test, y_train, y_valid, y_test = preprocess_data(dataset, "Diabetes_binary", 0.1, 0.2)
-    elif dataset == "2":
-        dataset = pd.read_csv("../dataset/")
-        print('Dataset shape: %s' % (str(dataset.shape)))
-        print("First 5 row:\n", dataset.head())
-        X_train, X_valid, X_test, y_train, y_valid, y_test = preprocess_data(dataset, "Diabetes_binary", 0.1, 0.2)
-    elif dataset == "3":
-        dataset = pd.read_csv("../dataset/")
-        print('Dataset shape: %s' % (str(dataset.shape)))
-        print("First 5 row:\n", dataset.head())
-        X_train, X_valid, X_test, y_train, y_valid, y_test = preprocess_data(dataset, "Diabetes_binary", 0.1, 0.2)
+    if regularization_type == "1":
+        regularization_type = "L1"
+    elif regularization_type == "2":
+        regularization_type = "L2"
     else:
-        print("Error during define dataset")
+        print("Invalid regularization type")
+
+    #Select Dataset and preprocessing Data:
+    if dataset == "1":
+        dataset = pd.read_csv("../dataset/WineQuality.csv")
+        print('Dataset shape: %s' % (str(dataset.shape)))
+        print("First 5 row:\n", dataset.head())
+        X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "quality_flag", 0.1, 0.2)
+    elif dataset == "2":
+        dataset = pd.read_csv("../dataset/mushroom_cleaned.csv")
+        print("Dataset shape: %s" % (str(dataset.shape)))
+        print("First 5 row\n", dataset.head(5))
+        X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "class", 0.1, 0.2)
+    elif dataset == "3":
+        dataset = pd.read_csv("../dataset/heart_disease_health.csv")
+        print("Dataset shape: %s" % (str(dataset.shape)))
+        print("First 5 row\n", dataset.head(5))
+        X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "HeartDiseaseorAttack", 0.1, 0.2)
+    else:
+        print("Invalid dataset")
         return -1
 
-    #TODO pulire precedenti test nelle cartelle di output
-    #Strategia Cross-Validation:
-
-    #Fissiamo una griglia di valori lambda:
-    # Creiamo una lista di valori lambda da testare: #TODO Provare con altri valori
-    lambdaL1_values = [1e-3, 5e-3, 0.5, 1]
-    lambdaL2_values = [0.01, 0.1, 0.5, 4.5]
-
+    #Set of lambda for cross-validation:
+    #TODO: try with other values
+    # Valori di L1 e L2 da testare
+    lambdaL1_values = [1e-4, 1e-3, 0.01, 0.1, 0.3]
+    lambdaL2_values = [1e-4, 1e-3, 0.01, 0.1, 0.3]
 
     if regularization_type=="L1":
         lambdaValues = lambdaL1_values
-    else:
+    elif regularization_type=="L2":
         lambdaValues = lambdaL2_values
+    else:
+        lambdaValues = -1
+        print("Regularization_type not define")
+        return lambdaValues
 
     """
-    Definiamo la dimensione dei vari layer:
-        Layer di input: ∈ R^n dove n è il numero di features
-        Livelli nascosti ciascuno con un certo numero di neuroni
-        Layer di output: abbiamo un'unica uscita 0/1
+        Definiamo la dimensione dei vari layer:
+            Layer di input: ∈ R^n dove n è il numero di features
+            Livelli nascosti ciascuno con un certo numero di neuroni
+            Layer di output: abbiamo un'unica uscita 0/1
     """
+    nn_layers = [X_train.shape[1], 32, 32, 1]
 
-    nn_layers = [X_train.shape[1], 120, 32, 32, 1]
-    #Dobbiamo inizializzare i parametri
 
-    b_lambda, b_accuracy, trained_parameters = cross_validate(
-        X_train, y_train,
-        X_valid, y_valid,
-        activation_function,
-        lambdaValues,
-        nn_layers,
-        num_epochs=70,
-        learning_rate=0.1,
-        batch_size=64,
+    cross_validation(X_train, y_train,
+                     X_valid, y_valid,
+                     activation_function,
+                     lambdaValues,
+                     nn_layers,
+                     regularization_type,
+
     )
-    print(f"Best Lambda: {b_lambda}, Best Validation Accuracy: {b_accuracy * 100}%")
-
-    train_cost, train_accuracy = evaluate_model(X_train, y_train, trained_parameters, lambdaL2_values[1], activation_function, regularization="L2")
-    print(f"Training cost: {train_cost}, Training accuracy: {train_accuracy * 100}%")
-
-    # Valutazione sul validation set
-    val_cost, val_accuracy = evaluate_model(X_valid, y_valid, trained_parameters, lambdaL2_values[1], activation_function , regularization="L2",)
-    print(f"Validation cost: {val_cost}, Validation accuracy: {val_accuracy * 100}%")
-
-    # Valutazione sul test set
-    test_cost, test_accuracy = evaluate_model(X_test, y_test, trained_parameters, lambdaL2_values[1], activation_function,regularization="L2")
-    print(f"Test cost: {test_cost}, Test accuracy: {test_accuracy * 100}%")
-
-    #Proviamo a passare un'instanza di input:
-    index = np.random.randint(0, X_test.shape[0])
-    X_sample = X_test[index, :].reshape(1, -1)  # Aggiungi la dimensione del batch
-    y_sample = y_test[:, index]
-
-    # Forward pass sul campione
-    Al_sample, cache = L_layer_forward(X_sample, trained_parameters, activation_function)
-
-    # Converti la probabilità in una classe binaria (0 o 1)
-    predicted_class = (Al_sample > 0.5).astype(int)  # Se Al_sample > 0.5, predici 1, altrimenti 0
-
-    # Stampa il risultato
-    print(f"Probabilità di classe positiva: {Al_sample}")
-    print(f"Classe predetta: {predicted_class}")
-    print(f"Etichetta reale: {y_sample}")
 
 
 if __name__ == "__main__":

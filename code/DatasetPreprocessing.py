@@ -1,66 +1,67 @@
-import pandas as pd
-import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
 
 
-def preprocess_data(df, label_column, test_size=0.2, validation_size=0.1):
+def rebalance(X_train, y_train, imbalance_threshold=0.5):
+    """
+    Effettua il rebalance dei dati di training usando SMOTE in caso di sbilanciamento.
+    Parameters:
+        X_train: Dati di training.
+        y_train: Label di training.
+        imbalance_threshold (float): Soglia per rilevare sbilanciamento (default 0.5).
+    Returns:
+        X_train, y_train: Dati bilanciati.
+    """
+    class_counts = y_train.value_counts()
+    if class_counts.min() / class_counts.max() < imbalance_threshold:  # Soglia di sbilanciamento
+        smote = SMOTE(random_state=42)
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+    return X_train, y_train
+
+
+def datasetPreprocessing(dataset, target_column, test_size=0.2, validation_size=0.1):
     """
     Preprocessa i dati:
     1) Separazione delle feature e della label.
-    2) Sostituzione dei valori NaN con la media della colonna.
+    2) Sostituzione dei valori NaN con la mediana della colonna.
     3) Oversampling delle classi minoritarie in caso di sbilanciamento.
     4) Normalizzazione delle feature.
     5) Suddivisione dei dati in training, validation e test set.
 
     Parameters:
-        df (pd.DataFrame): Il DataFrame contenente i dati.
-        label_column (str): Nome della colonna target (label).
+        dataset (pd.DataFrame): Il DataFrame contenente i dati.
+        target_column (str): Nome della colonna target (label).
         test_size (float): Percentuale dei dati da riservare al test set (default 0.2).
         validation_size (float): Percentuale dei dati da riservare al validation set (default 0.1).
 
     Returns:
         tuple: X_train, X_valid, X_test, y_train, y_valid, y_test
     """
-    # 1) Separazione delle feature e della label
-    X = df.drop(columns=[label_column])
-    y = df[label_column]
+    # Separazione delle feature e della label
+    X = dataset.drop(columns=[target_column])
+    y = dataset[target_column]
 
-    # 2) Sostituzione dei valori NaN con la media della colonna
-    X = X.apply(lambda col: col.fillna(col.mean()), axis=0)
+    # Rimozione delle righe con valori NaN nella colonna target
+    mask = y.notnull()
+    X = X[mask]
+    y = y[mask]
 
-    # 3) Oversampling in caso di sbilanciamento delle classi
-    class_counts = y.value_counts()
-    if len(class_counts) > 1 and class_counts.max() > class_counts.min() * 2:
-        # Ripeti le classi minoritarie per bilanciare il dataset
-        majority_class = class_counts.idxmax()
-        minority_class = class_counts.idxmin()
+    # Sostituzione dei valori NaN con la mediana
+    if X.isnull().sum().any():
+        X.fillna(X.median(), inplace=True)
 
-        majority_data = X[y == majority_class]
-        minority_data = X[y == minority_class]
-
-        # Oversampling della classe minoritaria
-        minority_data_resampled = resample(minority_data, replace=True,
-                                           n_samples=len(majority_data), random_state=42)
-
-        # Ricombina il dataset
-        X = pd.concat([majority_data, minority_data_resampled])
-        y = pd.concat([y[y == majority_class], y[y == minority_class].sample(len(majority_data), replace=True)])
-        print("Oversampling eseguito.")
-
-    # 4) Normalizzazione delle feature
+    # Standardizzazione delle feature
     scaler = StandardScaler()
-    X_normalized = scaler.fit_transform(X)
+    X = scaler.fit_transform(X)
 
-    # 5) Suddivisione dei dati in training, validation e test set
-    X_train, X_test, y_train, y_test = train_test_split(X_normalized, y, test_size=test_size, random_state=42)
+    # Suddivisione in training, test e validation set
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
     validation_ratio = validation_size / (1 - test_size)
     X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=validation_ratio, random_state=42)
 
-    # Mantieni il reshape per y_train, y_valid e y_test
-    y_train = y_train.values.reshape(1, -1)
-    y_valid = y_valid.values.reshape(1, -1)
-    y_test = y_test.values.reshape(1, -1)
+    # Oversampling con SMOTE
+    X_train, y_train = rebalance(X_train, y_train)
 
-    return X_train, X_valid, X_test, y_train, y_valid, y_test
+    return X_train, X_valid, X_test, y_train.values.reshape(1, -1), y_valid.values.reshape(1, -1), y_test.values.reshape(1, -1)
+
