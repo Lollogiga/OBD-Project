@@ -2,6 +2,7 @@ import pandas as pd
 
 from DatasetPreprocessing import *
 from CrossValidation import *
+from output import *
 from constant import *
 
 def print_menu(message, choice_number):
@@ -22,11 +23,11 @@ def print_menu(message, choice_number):
 
 def main():
     #Choice Dataset
-    dataset = print_menu(
-        "Choice a dateset:\n" +
+    dataset_choice = print_menu(
+        "Choice a dataset:\n" +
         "[1] Wine Quality\n" +
         "[2] Mushroom dataset\n" +
-        "[3] Heart attack risk dataset\n",
+        "[3] Airline passenger satisfaction\n",
     ["1", "2", "3"]
     )
 
@@ -47,7 +48,7 @@ def main():
 
     #Choice regularization:
     regularization_type = print_menu(
-        "What regularitazion do you want to use?\n"+
+        "What regularization do you want to use?\n"+
         "[1] L1\n" +
         "[2] L2\n",
         ["1", "2"]
@@ -60,58 +61,66 @@ def main():
         print("Invalid regularization type")
 
     #Select Dataset and preprocessing Data:
-    if dataset == "1":
+    if dataset_choice == "1":
+        dataset_name = "WineQuality"
         dataset = pd.read_csv("../dataset/WineQuality.csv")
         print('Dataset shape: %s' % (str(dataset.shape)))
-        print("First 5 row:\n", dataset.head())
+        print("First 5 rows:\n", dataset.head())
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "quality_flag", 0.1, 0.2)
-    elif dataset == "2":
+    elif dataset_choice == "2":
+        dataset_name = "Mushroom"
         dataset = pd.read_csv("../dataset/mushroom_cleaned.csv")
         print("Dataset shape: %s" % (str(dataset.shape)))
-        print("First 5 row\n", dataset.head(5))
+        print("First 5 rows:\n", dataset.head(5))
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "class", 0.1, 0.2)
-    elif dataset == "3":
-        dataset = pd.read_csv("../dataset/heart_disease_health.csv")
+    elif dataset_choice == "3":
+        dataset_name = "Airline"
+        dataset = pd.read_csv("../dataset/transformed_airline_passenger_satisfaction.csv")
         print("Dataset shape: %s" % (str(dataset.shape)))
-        print("First 5 row\n", dataset.head(5))
-        X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "HeartDiseaseorAttack", 0.1, 0.2)
+        print("First 5 rows:\n", dataset.head(5))
+        X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "satisfaction", 0.1, 0.2)
     else:
         print("Invalid dataset")
         return -1
 
-    #Set of lambda for cross-validation:
-    #TODO: try with other values
-    # Valori di L1 e L2 da testare
-    lambdaL1_values = [1e-4, 1e-3, 0.01, 0.1, 0.3]
-    lambdaL2_values = [1e-4, 1e-3, 0.01, 0.1, 0.3]
-
-    if regularization_type=="L1":
-        lambdaValues = lambdaL1_values
-    elif regularization_type=="L2":
-        lambdaValues = lambdaL2_values
+    # Set of lambda for cross-validation:
+    if regularization_type == "L1":
+        lambdaValues = [1e-4, 1e-3, 0.01, 0.1, 0.3]
+    elif regularization_type == "L2":
+        lambdaValues = [1e-4, 1e-3, 0.01, 0.1, 0.3]
     else:
         lambdaValues = -1
-        print("Regularization_type not define")
+        print("Regularization type not defined")
         return lambdaValues
 
-    """
-        Definiamo la dimensione dei vari layer:
-            Layer di input: ∈ R^n dove n è il numero di features
-            Livelli nascosti ciascuno con un certo numero di neuroni
-            Layer di output: abbiamo un'unica uscita 0/1
-    """
+    # Definiamo la dimensione dei vari layer:
     nn_layers = [X_train.shape[1], 32, 32, 1]
 
+    accuracyDictionary = {}
 
-    cross_validation(X_train, y_train,
-                     X_valid, y_valid,
-                     activation_function,
-                     lambdaValues,
-                     nn_layers,
-                     regularization_type,
-
+    lambd,_, parameters, lossCost = cross_validation(
+        X_train, y_train, X_valid, y_valid,
+        activation_function, lambdaValues,
+        nn_layers, regularization_type,
     )
 
+
+    # Salva i grafici della loss
+    save_loss_plots(lossCost, dataset_name, activation_function, regularization_type)
+
+    # Valutazione sul test set
+    accuracy, precision, recall, f1 = evaluate_model(X_test, parameters, y_test, activation_function)
+
+    # Salviamo i risultati nel file
+    save_evaluation_results(accuracy, precision, recall, f1, lambd, dataset_name, activation_function,
+                            regularization_type)
+
+    # Stampa dei risultati
+    print(f"Lambda*: {lambd}")
+    print(f"Accuracy on test set: {accuracy}")
+    print(f"Precision on test set: {precision}")
+    print(f"Recall on test set: {recall}")
+    print(f"F1 Score on test set: {f1}\n")
 
 if __name__ == "__main__":
     main()

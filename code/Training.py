@@ -119,7 +119,7 @@ def train_model(X_train, y_train, nn_layers, activation_function, lambd, regular
             costs: Lista dei costi calcolati a ogni epoca.
         """
 
-    cost = [] #Cost for each epoch
+    epoch_cost = [] #Cost for each epoch
     learning_rate = LEARNING_RATE
 
     # Inizializza i parametri:
@@ -130,7 +130,7 @@ def train_model(X_train, y_train, nn_layers, activation_function, lambd, regular
         mini_batches = create_mini_batches(X_train, y_train, BATCH_SIZE)
         #Iteration on miniBatch:
         for X_batch, Y_batch in mini_batches:
-            #TODO: Try to use Diminishing step-size
+
 
             #Forward pass:
             Al, caches = L_layer_forward(X_batch, parameters, activation_function)
@@ -144,7 +144,12 @@ def train_model(X_train, y_train, nn_layers, activation_function, lambd, regular
             #Update param:
             parameters, prev_parameters = update_parameters(parameters, prev_parameters, grads, learning_rate, MOMENTUM_BOOL, MOMENTUM)
 
+        #Calcolo il costo sull'intero dataset per monitoraggio:
+        AL_epoch, store = L_layer_forward(X_train, parameters, activation_function)
+        cost = compute_cost(AL_epoch, y_train.T, parameters, lambd, regularitazion_type)
+        epoch_cost.append(cost)
 
-    return parameters, cost
+
+    return parameters, epoch_cost
 
 
