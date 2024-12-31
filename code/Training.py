@@ -1,34 +1,7 @@
-import numpy as np
-from Backpropragation import *
-from ParamInitiliazizaion import *
-from constant import *
 from CrossValidation import *
-
-def evaluate_model(X, parameters, y, activation_fn):
-
-    probs, _ = L_layer_forward(X, parameters, activation_fn, "sigmoid")
-    labels = (probs >= 0.5) * 1
-
-    # accuracy
-    accuracy = np.mean(labels == y) * 100
-
-    # True Positives
-    TP = np.sum((y == 1) & (labels == 1))
-    # False Positives
-    FP = np.sum((y == 0) & (labels == 1))
-    # False Negatives
-    FN = np.sum((y == 1) & (labels == 0))
-
-    # precision
-    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-
-    # recall
-    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-
-    # f1 score
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-    return accuracy, precision*100, recall*100, f1
+from constant import *
+from Backpropagation import *
+from ParamInitialization import *
 
 def create_mini_batches(X, y, batch_size):
     """
@@ -83,7 +56,19 @@ def create_mini_batches(X, y, batch_size):
     return mini_batches
 
 def update_parameters(parameters, prev_parameters, grads, learning_rate, momentumBool, momentum):
-
+    """
+    Update the parameters of the model with SDG with/without momentum.
+    Parameters:
+         parameters (dict): A dictionary containing all the parameters of the model.
+         prev_parameters (dict): A dictionary containing all the previous parameters of the model.
+         grads (dict): A dictionary containing all the gradients calculated with backpropagation.
+         learning_rate (float): The learning rate of the model.
+         momentumBool (bool): Whether to use momentum.
+         momentum (float): The momentum factor.
+    Return:
+        parameters (dict): A dictionary containing all the new parameters of the model.
+        prev_parameters (dict): A dictionary containing all the previous parameters of the model.
+    """
     L = len(parameters)//2
     prev_parameters = parameters
 
@@ -98,32 +83,27 @@ def update_parameters(parameters, prev_parameters, grads, learning_rate, momentu
     return parameters, prev_parameters
 
 
-def train_model(X_train, y_train, nn_layers, activation_function, lambd, regularitazion_type):
+def train_model(X_train, y_train, nn_layers, activation_function, lambd, regularization_type):
     """
-        Addestra la rete neurale con mini-batch gradient descent o gradient descent con momentum.
+    Train the model
+    Parameters:
+        X_train (numpy.ndarray): The input features to use for training
+        y_train (numpy.ndarray): The true labels to use for loss calculation
+        nn_layers (list): A list containing all the layers of the neural network
+        activation_function (function): The activation function of the neural network
+        lambd (float): The regularization parameter
+        regularization_type (str): The type of regularization
+    Returns:
+          parameters (dict): A dictionary containing all the trained parameters of the model.
+          epochs_cot (list): A list containing the cost for each epoch.
+    """
 
-        Args:
-            X_train: Matrice di input (m, features).
-            y_train: Matrice di etichette (1, m).
-            nn_layers: Dimensione neural networks
-            activation_function: type of activation function
-            lambd: Parametro di regolarizzazione.
-            num_epochs: Numero di epoche.
-            Regularitazion_type: Tipo di regolarizzazione ('L2' o 'L1').
-            learning_rate: Tasso di apprendimento.
-            batch_size: Dimensione del mini-batch.
-            momentum: Booleano che indica se usare il gradient descent o gradient descent with momentum.
-
-        Returns:
-            parameters: Parametri aggiornati.
-            costs: Lista dei costi calcolati a ogni epoca.
-        """
 
     epoch_cost = [] #Cost for each epoch
     learning_rate = LEARNING_RATE
     decay_rate = 0.01
 
-    # Inizializza i parametri:
+    #Parameter initialization:
     parameters, prev_parameters = param_init(activation_function, nn_layers)
 
     for epoch in range(NUM_EPOCHS):
@@ -140,20 +120,18 @@ def train_model(X_train, y_train, nn_layers, activation_function, lambd, regular
             Al, caches = L_layer_forward(X_batch, parameters, activation_function)
 
             #Compute cost:
-            cost = compute_cost(Al, Y_batch, parameters, lambd, regularitazion_type)
+            cost = compute_cost(Al, Y_batch, parameters, lambd, regularization_type)
 
             #Backward propagation:
-            grads = L_layer_backward(Al, Y_batch, caches, parameters, activation_function, lambd, regularitazion_type)
+            grads = L_layer_backward(Al, Y_batch, caches, parameters, activation_function, lambd, regularization_type)
 
             #Update param:
             parameters, prev_parameters = update_parameters(parameters, prev_parameters, grads, learning_rate, MOMENTUM_BOOL, MOMENTUM)
 
-        #Calcolo il costo sull'intero dataset per monitoraggio:
+        #Compute the cost on training set for monitoring
         AL_epoch, store = L_layer_forward(X_train, parameters, activation_function)
-        cost = compute_cost(AL_epoch, y_train.T, parameters, lambd, regularitazion_type)
+        cost = compute_cost(AL_epoch, y_train.T, parameters, lambd, regularization_type)
         epoch_cost.append(cost)
 
 
     return parameters, epoch_cost
-
-

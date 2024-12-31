@@ -6,6 +6,7 @@ def linear_forward(A_prev, W, b, activation_function):
     """
     Implement the linear part of a layer's forward propagation.
     """
+
     # Compute the linear transformation Z
     Z = np.dot(W, A_prev) + b
 
@@ -23,18 +24,19 @@ def linear_forward(A_prev, W, b, activation_function):
 
 
 def L_layer_forward(X, parameters, activation_function, output_activation_function="sigmoid"):
+
     """
     Implement forward propagation for the model.
 
-    Arguments:
-    X -- data, numpy array of shape (m, n), where m = number of examples, n = number of features
-    parameters -- output of param_init()
-    activation_function -- activation function to use for hidden layers
-    output_activation_function -- activation function for the output layer (default: sigmoid)
+    Parameters:
+        X_ data, numpy array of shape (m, n), where m = number of examples, n = number of features
+        parameters: param of model
+        activation_function: activation function to use for hidden layers
+        output_activation_function: activation function for the output layer (default: sigmoid)
 
     Returns:
-    A -- the output of the last layer
-    store -- dictionary containing all intermediate values for backpropagation
+    A: the output of the last layer
+    store: dictionary containing all intermediate values for backpropagation
     """
     store = {}
 
@@ -66,14 +68,6 @@ def L_layer_forward(X, parameters, activation_function, output_activation_functi
 def compute_cost(A, Y, parameters, lambd, regularization):
     """
     Compute the cost
-
-    Parameters:
-        A: output rete neurale
-        Y: label
-        parameters (dict): dizionario contenente i parametri della rete
-        lambd (float): Regularization parameter.
-        regularization (str): Tipo di regolarizzazione da applicare.
-
     Returns:
         float: The computed cost.
     """
@@ -122,7 +116,7 @@ def linear_backward(dA, cache, activation_function, lambd=0, regularization=None
     A_prev, W, Z = cache
     m = A_prev.shape[1]
 
-    # Calcola dZ usando le derivate specifiche delle funzioni di attivazione
+    # Compute dZ using the function derivative
     if activation_function == "sigmoid":
         dZ = sigmoid_derivative(dA, Z)
     elif activation_function == "relu":
@@ -132,10 +126,10 @@ def linear_backward(dA, cache, activation_function, lambd=0, regularization=None
     else:
         raise ValueError(f"Unknown activation function: {activation_function}")
 
-    # Calcola dW, db e dA_prev
+    #Compute dW, db and dA_prev
     dW = (1. / m) * np.dot(dZ, A_prev.T)
 
-    # Applicazione della regolarizzazione
+    # Apply regularization:
     if regularization == "L2":
         dW += (lambd / m) * W
     elif regularization == "L1":
@@ -148,35 +142,49 @@ def linear_backward(dA, cache, activation_function, lambd=0, regularization=None
 
 
 def L_layer_backward(AL, Y, caches, parameters, activation_function="relu", lambd=0, regularization=None):
-    Y = Y.T
-    m = Y.shape[1]  # numero di esempi
-    epsilon = 1e-12  # Piccola costante per evitare divisioni per zero
+    """
+    Implement the backward propagation for the model.
+    Parameters:
+        AL: the output of the last layer
+        Y: the correct output of the last layer
+        caches: dictionary containing all intermediate values for backpropagation
+        parameters: param of model
+        activation_function: activation function to use for hidden layers
+        lambd: regularization parameter
+        regularization: regularization parameter
+    Returns:
+        gradients: List of gradients
+    """
 
-    # Correzione: limita i valori di AL
+    Y = Y.T
+    m = Y.shape[1]  # Number of samples
+    epsilon = 1e-12
+
+    #AL \in [epsilon, 1-epsilon]
     AL = np.clip(AL, epsilon, 1 - epsilon)
 
-    L = len(parameters) // 2  # Numero di layer
-    derivatives = {}
+    L = len(parameters) // 2  # Number of layer
+    gradients = {}
 
-    # Calcola il gradiente dell'output layer
+    #Compute gradient of output layers:
     dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
 
-    # Backward pass per l'output layer
+    # Backward pass for output layers:
     current_cache = (caches[f"A{L - 1}"], parameters[f"W{L}"], caches[f"Z{L}"])
     dA_prev, dW, db = linear_backward(dAL, current_cache, "sigmoid", lambd=lambd, regularization=regularization)
 
-    # Salva i gradienti per l'output layer
-    derivatives[f"dW{L}"] = dW
-    derivatives[f"db{L}"] = db
+    #Save gradient:
+    gradients[f"dW{L}"] = dW
+    gradients[f"db{L}"] = db
 
-    # Retropropagazione per i layer precedenti
+    #Backpropagation for previous layers
     for l in reversed(range(1, L)):
         current_cache = (caches[f"A{l - 1}"], parameters[f"W{l}"], caches[f"Z{l}"])
         dA_prev, dW, db = linear_backward(dA_prev, current_cache, activation_function, lambd=lambd,
                                           regularization=regularization)
 
-        # Salva i gradienti per il layer corrente
-        derivatives[f"dW{l}"] = dW
-        derivatives[f"db{l}"] = db
+        #Save gradients:
+        gradients[f"dW{l}"] = dW
+        gradients[f"db{l}"] = db
 
-    return derivatives
+    return gradients

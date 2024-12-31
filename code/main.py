@@ -7,11 +7,11 @@ from constant import *
 
 def print_menu(message, choice_number):
     """
-        Stampa a schermo una lista di opzioni
+        Print a list of choice
 
         Parameters:
-            message: Messaggio da stampare a schermo
-            choice_number: Lista di scelte valide
+            message: message to print
+            choice_number: list of choice
     """
     while True:
         print(message)
@@ -93,11 +93,18 @@ def main():
         print("Regularization type not defined")
         return lambdaValues
 
-    # Definiamo la dimensione dei vari layer:
+    """
+    Layer Dimension:
+        -Input Layer: ∈ R^n (n number of features)
+        -Hidden Layer: each with a specific number of neurons
+        -Output Layers: We works with binary classification. have one output
+    """
+
     nn_layers = [X_train.shape[1], 16, 32, 1]
 
     accuracyDictionary = {}
 
+    #Start with Cross validation:
     lambd,_, parameters, lossCost = cross_validation(
         X_train, y_train, X_valid, y_valid,
         activation_function, lambdaValues,
