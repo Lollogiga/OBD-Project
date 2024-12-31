@@ -30,12 +30,18 @@ def evaluate_model(X, parameters, y, activation_fn):
     return accuracy, precision*100, recall*100, f1
 
 
+import itertools
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, lambda_values, nn_layers,
                      regularitazion_type):
     best_lambda = None
     best_val_accuracy = 0
     best_parameters = None
     cost_per_lambda = {}  # Dizionario per salvare i costi per ogni lambda
+    stop_feedback = False  # Flag per fermare il feedback visivo
 
     def train_and_evaluate(lambd):
         # Allena il modello e restituisce i costi
@@ -45,7 +51,18 @@ def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, la
         validation_accuracy, _, _, _ = evaluate_model(X_valid, trained_parameters, y_valid, activation_function)
         return lambd, validation_accuracy, trained_parameters, costs
 
+    def feedback_message():
+        for frame in itertools.cycle(['Training   ', 'Training.  ', 'Training.. ', 'Training...']):
+            if stop_feedback:
+                break
+            print(f"\r{frame}", end='', flush=True)
+            time.sleep(0.5)
+
     start_time = time.time()  # Inizia il timer
+
+    # Avvia il thread per il feedback visivo
+    feedback_thread = threading.Thread(target=feedback_message)
+    feedback_thread.start()
 
     with ThreadPoolExecutor() as executor:
         futures = {executor.submit(train_and_evaluate, lambd): lambd for lambd in lambda_values}
@@ -54,7 +71,7 @@ def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, la
             lambd = futures[future]
             try:
                 result_lambda, val_accuracy, parameters, costs = future.result()
-                print(f"Lambda: {result_lambda}, Validation Accuracy: {val_accuracy}%")
+                print(f"\nLambda: {result_lambda}, Validation Accuracy: {val_accuracy}%")
                 cost_per_lambda[result_lambda] = costs  # Salva i costi per lambda
 
                 if val_accuracy > best_val_accuracy:
@@ -62,10 +79,14 @@ def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, la
                     best_lambda = result_lambda
                     best_parameters = parameters
             except Exception as e:
-                print(f"Errore durante il calcolo per lambda={lambd}: {e}")
+                print(f"\nErrore durante il calcolo per lambda={lambd}: {e}")
+
+    # Ferma il feedback visivo
+    stop_feedback = True
+    feedback_thread.join()
 
     end_time = time.time()  # Ferma il timer
     total_time = end_time - start_time
-    print(f"Tempo totale per il training: {total_time:.2f} secondi")
+    print(f"\nTempo totale per il training: {total_time:.2f} secondi")
 
     return best_lambda, best_val_accuracy, best_parameters, cost_per_lambda

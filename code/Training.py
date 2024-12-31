@@ -121,11 +121,15 @@ def train_model(X_train, y_train, nn_layers, activation_function, lambd, regular
 
     epoch_cost = [] #Cost for each epoch
     learning_rate = LEARNING_RATE
+    decay_rate = 0.01
 
     # Inizializza i parametri:
     parameters, prev_parameters = param_init(activation_function, nn_layers)
 
     for epoch in range(NUM_EPOCHS):
+        if DECAY_BOOL:
+            learning_rate = LEARNING_RATE / (1 + decay_rate*epoch)
+
         #Create mini-batch:
         mini_batches = create_mini_batches(X_train, y_train, BATCH_SIZE)
         #Iteration on miniBatch:

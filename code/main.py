@@ -94,14 +94,14 @@ def main():
         return lambdaValues
 
     # Definiamo la dimensione dei vari layer:
-    nn_layers = [X_train.shape[1], 32, 32, 1]
+    nn_layers = [X_train.shape[1], 16, 32, 1]
 
     accuracyDictionary = {}
 
     lambd,_, parameters, lossCost = cross_validation(
         X_train, y_train, X_valid, y_valid,
         activation_function, lambdaValues,
-        nn_layers, regularization_type,
+        nn_layers, regularization_type
     )
 
 
