@@ -3,7 +3,7 @@ import pandas as pd
 from DatasetPreprocessing import *
 from CrossValidation import *
 from output import *
-from constant import *
+from FeaturesImportance import *
 
 def print_menu(message, choice_number):
     """
@@ -67,18 +67,21 @@ def main():
         print('Dataset shape: %s' % (str(dataset.shape)))
         print("First 5 rows:\n", dataset.head())
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "quality_flag", 0.1, 0.2)
+        feature_names = dataset.columns.tolist()
     elif dataset_choice == "2":
         dataset_name = "Mushroom"
         dataset = pd.read_csv("../dataset/mushroom_cleaned.csv")
         print("Dataset shape: %s" % (str(dataset.shape)))
         print("First 5 rows:\n", dataset.head(5))
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "class", 0.1, 0.2)
+        feature_names = dataset.columns.tolist()
     elif dataset_choice == "3":
         dataset_name = "Airline"
         dataset = pd.read_csv("../dataset/transformed_airline_passenger_satisfaction.csv")
         print("Dataset shape: %s" % (str(dataset.shape)))
         print("First 5 rows:\n", dataset.head(5))
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "satisfaction", 0.1, 0.2)
+        feature_names = dataset.columns.tolist()
     else:
         print("Invalid dataset")
         return -1
@@ -129,5 +132,17 @@ def main():
     print(f"Recall on test set: {recall}")
     print(f"F1 Score on test set: {f1}\n")
 
+
+    feature_importance = compute_feature_importance(parameters)
+    plot_feature_importance(feature_importance, feature_names, dataset_name)
+
+    W1 = parameters[f"W1"]
+    df_W1 = pd.DataFrame(W1, columns=feature_names[:-1])
+    dir_path = "../output/" + dataset_name
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    file_path = os.path.join(dir_path, f"{dataset_name}_weight.csv")
+    df_W1.to_csv(file_path, index=False)
 if __name__ == "__main__":
     main()
