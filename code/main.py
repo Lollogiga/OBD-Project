@@ -72,7 +72,7 @@ def main():
         feature_names = dataset.columns.tolist()
     elif dataset_choice == "2":
         dataset_name = "WineQualityCorrect"
-        dataset = pd.read_csv("../dataset/WineQualityCorrect.csv.csv")
+        dataset = pd.read_csv("../dataset/WineQualityCorrect.csv")
         print('Dataset shape: %s' % (str(dataset.shape)))
         print("First 5 rows:\n", dataset.head())
         X_train, X_valid, X_test, y_train, y_valid, y_test = datasetPreprocessing(dataset, "quality_flag", 0.1, 0.2)
