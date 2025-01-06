@@ -131,17 +131,17 @@ def main():
     )
 
 
-    # Salva i grafici della loss
+    # Save loss graphs
     save_loss_plots(lossCost, dataset_name, activation_function, regularization_type)
 
-    # Valutazione sul test set
+    # Compute performance on test set
     accuracy, precision, recall, f1 = evaluate_model(X_test, parameters, y_test, activation_function)
 
-    # Salviamo i risultati nel file
+    # Save result on file for report
     save_evaluation_results(accuracy, precision, recall, f1, lambd, dataset_name, activation_function,
                             regularization_type, total_time)
 
-    # Stampa dei risultati
+    # Print result
     print(f"Lambda*: {lambd}")
     print(f"Accuracy on test set: {accuracy}")
     print(f"Precision on test set: {precision}")
@@ -149,16 +149,15 @@ def main():
     print(f"F1 Score on test set: {f1}\n")
 
 
+    #Compute features importance:
     feature_importance = compute_feature_importance(parameters)
     plot_feature_importance(feature_importance, feature_names, dataset_name, activation_function, regularization_type)
 
-    W1 = parameters[f"W1"]
-    df_W1 = pd.DataFrame(W1, columns=feature_names[:-1])
-    dir_path = "../output/" + dataset_name + "/" + activation_function + "/" + regularization_type
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    #Save weights on file:
+    saveWeights(activation_function, dataset_name, feature_names, parameters, regularization_type)
 
-    file_path = os.path.join(dir_path, f"{dataset_name}_weight.csv")
-    df_W1.to_csv(file_path, index=False)
+
+
+
 if __name__ == "__main__":
     main()

@@ -1,5 +1,16 @@
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
+
+def saveWeights(activation_function, dataset_name, feature_names, parameters, regularization_type):
+    W1 = parameters[f"W1"]
+    df_W1 = pd.DataFrame(W1, columns=feature_names[:-1])
+    dir_path = "../output/" + dataset_name + "/" + activation_function + "/" + regularization_type
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    file_path = os.path.join(dir_path, f"{dataset_name}_weight.csv")
+    df_W1.to_csv(file_path, index=False)
+
 
 def save_loss_plots(lossCost, dataset_name, activation_function, regularization_type):
     """
