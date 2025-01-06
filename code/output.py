@@ -48,7 +48,7 @@ def save_loss_plots(lossCost, dataset_name, activation_function, regularization_
 
 
 def save_evaluation_results(accuracy, precision, recall, f1, lambd, dataset_name, activation_function,
-                            regularization_type):
+                            regularization_type, total_time):
     """
     Save the evaluation results (accuracy, precision, recall, f1) to a file in the correct folder.
     The file will be saved with the name formed by the dataset, activation function, regularization type and lambda.
@@ -79,6 +79,7 @@ def save_evaluation_results(accuracy, precision, recall, f1, lambd, dataset_name
 
     # Write result into the file
     with open(file_path, "w") as file:
+        file.write(f"Time: {total_time}\n")
         file.write(f"Lambda: {lambd}\n")
         file.write(f"Accuracy: {accuracy}\n")
         file.write(f"Precision: {precision}\n")

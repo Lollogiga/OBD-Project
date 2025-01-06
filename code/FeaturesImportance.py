@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_feature_importance(feature_importance, feature_names, dataset_name):
+def plot_feature_importance(feature_importance, feature_names, dataset_name, activaction_function, regularization_type):
     """
     Save plot about feature importance
     Parameters:
@@ -26,7 +26,7 @@ def plot_feature_importance(feature_importance, feature_names, dataset_name):
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    dir_path = "../output/" + dataset_name
+    dir_path = "../output/" + dataset_name + "/" + activaction_function + "/" + regularization_type
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
     file_path = os.path.join(dir_path, f"{dataset_name}_features_importance.png")

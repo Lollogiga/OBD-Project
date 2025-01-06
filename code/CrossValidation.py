@@ -52,7 +52,7 @@ def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, la
         lambda_values: List of lambda values
         nn_layers: Neural network layers
         regularization_type: Type of regularization
-        :return best lambda, value loss associated to the best lambda, trained parameters, cost list associated to the best lambda
+        :return best lambda, value loss associated to the best lambda, trained parameters, cost list associated to the best lambda, total_time time required to train the network
     """
 
 
@@ -111,4 +111,4 @@ def cross_validation(X_train, y_train, X_valid, y_valid, activation_function, la
     total_time = end_time - start_time
     print(f"\nTempo totale per il training: {total_time:.2f} secondi")
 
-    return best_lambda, best_val_accuracy, best_parameters, cost_per_lambda
+    return best_lambda, best_val_accuracy, best_parameters, cost_per_lambda, total_time
