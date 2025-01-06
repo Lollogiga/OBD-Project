@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+#Start function for Windows users:
 def verify_pip():
     try:
         import pip

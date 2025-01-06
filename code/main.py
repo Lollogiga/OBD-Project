@@ -104,9 +104,9 @@ def main():
 
     # Set of lambda for cross-validation:
     if regularization_type == "L1":
-        lambdaValues = [1e-4, 1e-3, 0.01, 0.1, 0.3]
+        lambdaValues = LAMBDA_L1_LIST
     elif regularization_type == "L2":
-        lambdaValues = [1e-2, 1e-1, 0.1, 0.15, 0.3]
+        lambdaValues = LAMBDA_L2_LIST
     else:
         lambdaValues = -1
         print("Regularization type not defined")
@@ -118,9 +118,7 @@ def main():
         -Hidden Layer: each with a specific number of neurons
         -Output Layers: We works with binary classification. have one output
     """
-
-    nn_layers = [X_train.shape[1], 16, 32, 1]
-
+    nn_layers = [X_train.shape[1]] + HIDDEN_LAYERS + [1]
     accuracyDictionary = {}
 
     #Start with Cross validation:
