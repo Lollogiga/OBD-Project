@@ -17,6 +17,14 @@ Altrimenti è possibile scaricare le librerie tramite <code> requirements.txt </
  ```bash
     $ pip install -r requirements.txt 
  ```
+**Importante**:
+
+Se l'esecuzione del comando genera il seguente errore: <code> externally-managed-environment </code>, procedere come segue:
+```bash
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    $ pip install -r requirements.txt 
+```
 ## Configurazione del modello
 Tutte le costanti principali utilizzate dal modello possono essere modificate nel file <code>.\code\constant.py</code>. Di seguito sono riportate le variabili e il loro significato:
 - **NUM_EPOCHS**: Numero di epoche per il training del modello.
@@ -29,6 +37,14 @@ Tutte le costanti principali utilizzate dal modello possono essere modificate ne
 - **LAMBDA_L2_LIST**: Lista di valori di regolarizzazione L2 per cross-validation.
 ## Esecuzione del modello
 Dopo aver configurato i parametri, è possibile avviare il modello eseguendo il file principale:
- ```bash
-    $ python .\code\main.py
- ```
+- Windows:
+  ```bash
+     $ cd .\code
+     $ python main.py
+  ```
+- Linux:
+  ```bash
+     $ cd code/
+     $ python main.py
+  ```
+  
